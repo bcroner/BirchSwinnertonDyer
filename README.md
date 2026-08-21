@@ -172,6 +172,43 @@ quartic.
 zero inconclusive local tests, zero contradictions, and agreement with the
 2-isogeny descent on every single curve.**
 
+### `period.py`, `sha_order.py` — the order of Ш, and the n=17 answer
+
+At rank 0 the BSD formula reads L(E,1) = Ω·∏c_p·#Ш / (#E(Q)_tors)². The real
+period Ω is computed by AGM (validated exactly against 4ϖ = 10.488230217168 for
+y²=x³−x), and L(E,1) by `lfun.py`.
+
+For y² = x³ − n²x the torsion is (Z/2)², so #Ш·∏c_p = 16·L(E,1)/Ω — and that
+quantity comes out as an exact power of 2 to seven decimals across the sweep,
+which is a strong check on both the L-values and the periods. Fitting
+∏c_p = c₂·4^k (k = number of odd primes dividing n, c₂ = 1 for n odd and 2 for
+n even) gives **#Ш = 1 on 12 of 14 curves** and isolates two exceptions:
+
+| n | #Ш | structure |
+|---|---|---|
+| 17 | **4** | (Z/2)² |
+| 43 | **9** | (Z/3)² |
+
+Both are perfect squares — which Cassels–Tate requires and which was *not* built
+into the computation. That is an independent check that the fit is right.
+
+**This answers the open question about n = 17.** Complete 2-descent proves
+unconditionally that dim Ш[2] = 2, so #Ш[2] = 4. The BSD formula gives #Ш = 4.
+Since Ш[2] ⊆ Ш and both have order 4, **Ш ≅ (Z/2)²**.
+
+Two separate exclusions, at different strengths:
+- **Ш ≇ Z/4, unconditionally.** Z/4 has Ш[2] = Z/2, one-dimensional, contradicting
+  the descent computation.
+- **Ш ≇ (Z/4)², conditional on BSD.** That would give #Ш = 16, not 4.
+
+And n = 43 makes the complementary point: 2-descent proves Ш[2] = 0 there, yet
+#Ш = 9. A Ш ≅ (Z/3)² obstruction is invisible to any amount of 2-descent — which
+is exactly why 2-descent alone can never settle rank in general.
+
+**Caveats.** #Ш is conditional on BSD. The Tamagawa numbers are *fitted* from the
+data, not computed by Tate's algorithm. The unconditional half is the descent:
+`complete2.py` proves dim Ш[2] exactly, with no hypotheses.
+
 ### `zeros.py` — analytic rank on the critical line (working)
 
 `lfun.py` reads the order of vanishing off the **real axis**, where it is
