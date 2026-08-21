@@ -172,6 +172,36 @@ quartic.
 zero inconclusive local tests, zero contradictions, and agreement with the
 2-isogeny descent on every single curve.**
 
+### `zeros.py` — analytic rank on the critical line (working)
+
+`lfun.py` reads the order of vanishing off the **real axis**, where it is
+badly conditioned: for 5077a1 the ratios needed 10× quadrature resolution to
+reach 7.94 against a target of 8, and one sample point came out with the wrong
+sign.
+
+On the **critical line** s = 1 + it the functional equation makes Λ real (up to
+a fixed phase), so F(t) ~ c·tʳ and F(t)/F(t/2) → 2ʳ. This is far better
+conditioned — for 5077a1 the raw ratios climb to 8 from below while Richardson
+descends to it from above, bracketing the answer. Zeros are then found as sign
+changes of a real function, needing no argument principle.
+
+Sample points are scaled by 1/log N: the gap to the first zero shrinks with the
+conductor, and points that work at N = 37 are already past the first zero at
+N = 9248. Runs are **self-flagged** — a sign flip means a zero was crossed, a
+non-monotone tail means the noise floor was hit.
+
+**11 curves spanning ranks 0–3 and both root numbers: analytic rank = algebraic
+rank on every one, with 10 of 11 self-reported trustworthy** (the flagged one,
+n = 41, is correct but landed there partly by luck, which is exactly what the
+flag is for). The root number is determined by matching the continuation to the
+Dirichlet series, not hardcoded.
+
+The low-lying zeros come out real — 37a1 at t = 5.003, 389a1 at t = 2.876,
+4.417, 5.800. **This is consistent with GRH but does not verify it**: finding
+zeros on the line does not exclude zeros off it, which needs a counting
+argument (argument principle against Riemann–von Mangoldt) that is not
+implemented here.
+
 ### `qpsol.py` — p-adic solubility of quartics (the fix that mattered)
 
 Deciding z² = g(u,v) over Q_p by refining (u,v) mod pᵏ branches **p² per
