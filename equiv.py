@@ -89,11 +89,16 @@ def p_solvable(g, p, maxdepth=12, budget=300_000):
     return None if unknown else False
 
 def els(g, I, J):
+    """Everywhere local solvability of z^2 = g(u,v).
+    Uses the one-variable p-adic test (qpsol), which branches p per level
+    instead of p^2 and divides out content, so it decides cases the
+    two-variable refinement could only time out on."""
+    from qpsol import qp_soluble
     if not real_solvable(g): return False
     D = 4*I**3 - J*J
     bad = set(factor(2*D)) | {2} if D else {2}
     for p in sorted(bad):
-        r = p_solvable(g, p)
+        r = qp_soluble(g, p)
         if r is False: return False
         if r is None: return None
     return True

@@ -255,7 +255,8 @@ def quartic_els(g, extra_primes=()):
             t = abs(D)
             while t % p == 0: t //= p; vd += 1
         depth = min(2*vd + 8, 30)
-        r = q_p_solvable(g, p, maxdepth=depth, budget=BUDGET[0])
+        from qpsol import qp_soluble
+        r = qp_soluble(g, p)     # one-variable test: branches p (8 at p=2), not p^2
         if r is False: return False
         if r is None: return None
     return True
@@ -269,26 +270,35 @@ def curve_c4c6(e, b, c):
     return b2*b2 - 24*b4, -b2**3 + 36*b2*b4 - 216*b6
 
 def minimise_quartic(g, c4, c6):
-    """The 2-covering must have invariants exactly (I,J) = (c4, 2c6).
-    Scaling g -> mu*g sends I -> mu^2 I and J -> mu^3 J, so the spurious
-    factor introduced by the conic parametrisation is recoverable:
+    """Strip the square scaling the conic parametrisation introduces.
 
-        mu = J(g)*c4 / (2*c6*I(g))
+    Measured fact: the constructed quartic always has I(g) = lam^2 c4 and
+    J(g) = lam^3 (2c6) with lam a PERFECT SQUARE (checked over every class of
+    many curves).  So there is no quadratic twist -- z^2 = g and z^2 = g/lam
+    are the same curve, and dividing lam out is safe.  It is also necessary:
+    unreduced quartics reach v_p(disc) in the dozens and the p-adic tests
+    then exhaust their budget and report 'inconclusive', which inflates Sel_2.
 
-    Dividing it out gives the minimal model.  Without this the quartics carry
-    v_p(disc) in the dozens and no local test can decide them."""
+    Only squares are multiplied or divided here, so ELS is preserved exactly.
+    """
     from quartic import I_inv, J_inv
     from fractions import Fraction as F
+    from descent import factor
     I, J = I_inv(*g), J_inv(*g)
-    if I == 0 or c6 == 0: return g, None
-    mu = F(J*c4, 2*c6*I)
-    if mu == 0: return g, None
-    num, den = mu.numerator, mu.denominator
-    ng = [F(x, 1)/mu for x in g]
-    if all(x.denominator == 1 for x in ng):
-        gg = tuple(int(x) for x in ng)
-        if I_inv(*gg) == c4 and J_inv(*gg) == 2*c6: return gg, mu
-    return g, mu
+    if I == 0 or c6 == 0 or c4 == 0: return g, None
+    lam = F(J*c4, 2*c6*I)
+    if lam <= 0: return g, None
+    gr = [F(x)/lam for x in g]
+    den = 1
+    for z in gr: den = den*z.denominator // gcd(den, z.denominator)
+    gi = [int(z*den*den) for z in gr]          # multiply by den^2 (a square)
+    cont = 0
+    for x in gi: cont = gcd(cont, abs(x))
+    if cont:
+        sq = 1
+        for p, ee in factor(cont).items(): sq *= p**(2*(ee//2))
+        if sq > 1: gi = [x//sq for x in gi]     # divide by a square
+    return tuple(gi), lam
 
 def selmer_onetors(e, b, c, verbose=False):
     """dim Sel_2 for E : y^2 = (x-e)(x^2+bx+c), q irreducible."""

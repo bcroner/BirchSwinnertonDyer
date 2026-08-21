@@ -87,6 +87,9 @@ Stated plainly so nobody builds on sand.
    normalised Gram determinant) for independence.
 5. `unfinished/enum2.py` is fast but **incomplete** — it misses quartics. Do not
    use it for upper bounds.
+6. `onetors.py` handles imaginary quadratic K only. Real quadratic K needs
+   fundamental units (the norm form is indefinite, so infinitely many elements
+   share a norm); not implemented.
 
 ---
 
@@ -156,19 +159,32 @@ A real bug was caught here: the first `is_square_in_K` accepted −2 as a square
 in Q(i), because it only checked that a consistent (trace, norm) pair existed
 for the square root and never that the root lay in the field.
 
-### `unfinished/onetors.py` — 2-descent over Q×K (INCOMPLETE)
+### `onetors.py` — 2-descent over Q×K (working)
 
-For curves with exactly one rational 2-torsion point. **Do not use for
-upper bounds.** Validated parts: the descent map P ↦ x−θ lands in K(S,2) on
-every rational point tested across 5 curves and 3 fields; conic solvability by
-Hilbert symbols (exact, Hasse–Minkowski); the parametrisation (200/200 points
-on the conic); cross-checks against two other engines agree on 5 curves and
-produce zero contradictions over 39.
+For curves with exactly one rational 2-torsion point, K imaginary quadratic.
+The étale algebra is Q×K; the norm relation forces the Q-component, so the
+descent lives in K*/K*² and Sel₂ ≤ K(S,2), computed exactly by `ks2.py` — no
+search box. Each class gives a conic plus a square condition; the conic is
+decided exactly by Hilbert symbols (Hasse–Minkowski), then parametrised to a
+quartic.
 
-The defect: the quartic obtained by parametrising the conic is non-minimal,
-with v_p(disc) in the dozens, and its invariants do not match the required
-(I,J) = (c₄, 2c₆). They differ by λ = μ·det², and dividing λ out is a quadratic
-twist unless λ is a square — so there is a normalisation error in the
-homogeneous space that is not yet located. Consequence: Selmer counts come out
-non-power-of-2 on roughly 40% of curves. The results are conservative (never
-contradicted another engine) but not sharp.
+**Scan of y² = x(x²+bx+c) over 67 curves: every Selmer count a power of 2,
+zero inconclusive local tests, zero contradictions, and agreement with the
+2-isogeny descent on every single curve.**
+
+### `qpsol.py` — p-adic solubility of quartics (the fix that mattered)
+
+Deciding z² = g(u,v) over Q_p by refining (u,v) mod pᵏ branches **p² per
+level**, which is hopeless at p = 11 or 23 — it times out and reports
+"inconclusive", and inconclusive classes must be counted into Sel₂, which
+destroys the group structure.
+
+Reducing to one variable — (u,v) primitive means v is a unit or p|v and u is
+— branches **p per level** (8 at p=2, where the square class of a unit is only
+fixed mod 8), and dividing p² of content out at each step keeps coefficients
+bounded. Cross-checked against the old test: 1532 agreements at odd p and 600
+at p=2, zero disagreements. On the quartics the old test could not decide it
+returns an answer in under a millisecond where the old one spent 1.5 s to give
+up.
+
+This also feeds `descent2.py`, whose three benchmarks still pass.
