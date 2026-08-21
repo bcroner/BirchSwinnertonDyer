@@ -17,20 +17,43 @@ that they agree on curves where both are reachable.
 | `rank.py` / `descent.py` | Descent via 2-isogeny. Needs a rational point of order 2. | 10/10 exact ranks on congruent-number curves with independently known answers |
 | `mw.py` | Rank *lower* bounds for any curve: point search + Néron–Tate height pairing | Regulators match published values to 5 s.f. on 37a1, 389a1, 5077a1 |
 | `descent2.py` | **General** 2-descent (Birch–Swinnerton-Dyer quartic method). No 2-torsion needed. | dim Sel₂ = 1, 2, 3 exactly on 37a1, 389a1, 5077a1 |
+| `complete2.py` | **Complete** 2-descent for curves with full rational 2-torsion. **No search box, no reduction theory** — the candidate set is exact. | 56/60 exact ranks; every Selmer count a power of 2; zero bug indicators |
 | `bsd.py` | Runs the two engines together and cross-checks them | 60-curve sweep, **zero contradictions**, 55/60 exact ranks |
 | `lfun.py` | The L-function from point counts + modular continuation | a_p matches newform 37.2.a.a; analytic ranks 1, 2, 3 recovered |
 | `sha.py`, `bm.py`, `bm3.py` | Ш made explicit; the Brauer–Manin obstruction computed as a number | Σ_v inv_v(A) = 1/2 on five independent adelic points |
 
 ### Headline results
 
-- **55/60 exact ranks** on `y² = x³ − n²x` for n = 1…60.
-- **Zero contradictions** between two independently written engines across those 60 curves — the point-search lower bound never once exceeded the descent upper bound.
-- **Two confirmed Ш obstructions**, at n = 17 and n = 42: descent gives rank ∈ [0,2]; the L-function gives L(E,1) = 2.54 and 3.24, so analytic rank 0; Coates–Wiles (CM curves) then forces rank = 0, so the excess of 2 is entirely Ш. Consequently **17 and 42 are not congruent numbers**.
-- **Analytic rank = algebraic rank** verified independently on 37a1 (1), 389a1 (2), 5077a1 (3) — computed by two programs sharing no code and no concepts.
+- **56/60 exact ranks** on `y² = x³ − n²x` for n = 1…60, by complete 2-descent
+  (`complete2.py`) — rigorous, with no search box anywhere in the computation.
+- **Zero contradictions** between independently written engines — across the
+  60-curve sweep the point-search lower bound never once exceeded the descent
+  upper bound, and every Selmer count came out a power of 2 as group structure
+  demands.
+- **One confirmed Ш obstruction, at n = 17**: complete 2-descent gives
+  dim Sel₂ = 4 exactly; E(Q)[2] contributes 2; the L-function gives
+  L(E,1) = 2.54 ≠ 0, so the analytic rank is 0, and Coates–Wiles (CM curves)
+  forces rank = 0. Hence **dim Ш[2] = 2**, i.e. #Ш[2] = 4 — a perfect square,
+  as Cassels–Tate requires.
+- **17 and 42 are not congruent numbers** — no right triangle with rational
+  sides has either as its area. For n = 42 complete 2-descent settles it alone,
+  with no analytic input.
+- **Analytic rank = algebraic rank** verified independently on 37a1 (1),
+  389a1 (2), 5077a1 (3) — by two programs sharing no code and no concepts.
 
-Of ten apparent Ш gaps in the first sweep, five turned out to be a weak point
-search and closed under a larger height bound. Distinguishing a real
-obstruction from a tired search is most of the work.
+Telling a real obstruction from a tired search is most of the work. Of ten
+apparent Ш gaps in the first sweep, five were merely a weak point search and
+closed under a larger height bound. The remaining gaps at n = 37, 47, 53 are
+also weak lower bounds, not Ш: those are primes ≡ 5, 7 mod 8, hence congruent
+numbers of rank 1.
+
+### A correction
+
+An earlier version of this README claimed **two** Ш obstructions, at n = 17 and
+n = 42. That was wrong. The n = 42 gap came from the weaker descent via
+2-isogeny, whose excess measures Ш[φ] on the *isogenous* curve E′ = y²=x³+4n²x,
+not Ш(E)[2]. Complete 2-descent shows Ш(E)[2] = 0 for n = 42. The n = 17 result
+survives and is now rigorous rather than heuristic.
 
 ---
 
@@ -38,8 +61,10 @@ obstruction from a tired search is most of the work.
 
 Stated plainly so nobody builds on sand.
 
-1. **`descent2.py`'s upper bound is heuristic, not proof.** The quartic
-   enumeration uses a search box with no proven reduction bound behind it.
+1. **`descent2.py`'s upper bound is heuristic, not proof** — but only for
+   curves whose 2-division cubic is irreducible. For curves with full rational
+   2-torsion use `complete2.py` instead, which is exact and box-free. The
+   quartic enumeration uses a search box with no proven reduction bound.
    It self-audits — Sel₂ is a group, so a class count that is not a power of 2
    proves the box was too small, and the tool escalates and refuses to report
    when it cannot stabilise. But a *missing subgroup* would still leave a power
@@ -52,7 +77,12 @@ Stated plainly so nobody builds on sand.
    (Kraus's criterion has extra congruence conditions there); it can return
    N = 1, which is impossible.
 
-3. Local solvability tests can return inconclusive at their depth cap.
+3. Local solvability tests can return inconclusive at their depth cap. When
+   that happens `complete2.py` counts the class as being **inside** Sel₂. That
+   is the safe direction: it can only weaken the rank upper bound, never make
+   it too small. (Dropping such classes instead — an earlier bug — produced
+   `rank ≤ −1` on n = 59, which the power-of-2 self-audit caught.) Currently
+   inconclusive on n = 47, 53, 59 of the sweep.
 4. Canonical heights are numerical, with a heuristic threshold (1e−3 on the
    normalised Gram determinant) for independence.
 5. `unfinished/enum2.py` is fast but **incomplete** — it misses quartics. Do not
@@ -65,6 +95,7 @@ Stated plainly so nobody builds on sand.
 ```bash
 python rank.py 0 0 0 -289 0      # 2-isogeny descent, Weierstrass a1 a2 a3 a4 a6
 python descent2.py               # general 2-descent on the benchmark curves
+python sweep2.py                 # complete 2-descent, 60-curve sweep (exact)
 python mw.py                     # rank lower bounds via height pairings
 python bsd.py                    # 60-curve combined sweep
 python sha.py                    # two curves that violate the Hasse principle
