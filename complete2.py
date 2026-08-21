@@ -101,21 +101,52 @@ def els(d1, d2, d3, e1, e2, e3, S):
         if r is None: return None
     return True
 
-def rational_point(d1, d2, d3, e1, e2, e3, B=400):
+_SQ64 = {(i*i) % 64 for i in range(64)}
+_SQ63 = {(i*i) % 63 for i in range(63)}
+_SQ65 = {(i*i) % 65 for i in range(65)}
+
+def rational_point(d1, d2, d3, e1, e2, e3, B=1200):
+    """Search the homogeneous space for a rational point.
+
+    A projective point scales so that (u1,u2,u3,w) are coprime AS A QUADRUPLE.
+    u1 and w may therefore share a factor -- requiring gcd(u1,w)=1 (an earlier
+    bug) silently discarded valid points and cost half the image on n=37.
+    """
     E2, E3 = e2-e1, e3-e1
     if d1*d2 > 0 and d1*d3 > 0:
         if isqrt(d1*d2)**2 == d1*d2 and isqrt(d1*d3)**2 == d1*d3:
             return ("infinity", 1, 0)
     for w in range(0, B+1):
-        for u1 in (range(-B, B+1) if w else range(1, 2)):
-            if w and gcd(abs(u1), w) != 1: continue
-            A = d1*u1*u1 - E2*w*w
-            Bq = d1*u1*u1 - E3*w*w
-            x, y = d2*A, d3*Bq
-            if x < 0 or y < 0: continue
+        w2 = w*w; c2 = E2*w2; c3 = E3*w2
+        us = range(-B, B+1) if w else range(1, 2)
+        for u1 in us:
+            t = d1*u1*u1
+            x = d2*(t - c2)
+            if x < 0: continue
+            if x % 64 not in _SQ64: continue
+            y = d3*(t - c3)
+            if y < 0: continue
+            if y % 64 not in _SQ64: continue
+            if x % 63 not in _SQ63 or y % 63 not in _SQ63: continue
+            if x % 65 not in _SQ65 or y % 65 not in _SQ65: continue
             if isqrt(x)**2 != x or isqrt(y)**2 != y: continue
-            return (u1, w, d1*u1*u1)
+            return (u1, w, t)
     return None
+
+def saturate_pairs(pairs):
+    """alpha(E(Q)) is a SUBGROUP of (Q*/Q*^2)^2 under componentwise
+    multiplication mod squares, so closing the witnessed set under that
+    operation is sound -- and it recovers classes the point search was too
+    weak to exhibit.  (Same argument as the saturation in descent.py.)"""
+    G = set(pairs) | {(1, 1)}
+    changed = True
+    while changed:
+        changed = False
+        for (a1, a2) in list(G):
+            for (b1, b2) in list(G):
+                z = (sqfree_int(a1*b1), sqfree_int(a2*b2))
+                if z not in G: G.add(z); changed = True
+    return G
 
 def complete_descent(e1, e2, e3, verbose=False):
     S = support(e1, e2, e3)
@@ -134,4 +165,7 @@ def complete_descent(e1, e2, e3, verbose=False):
             if not r: continue
             sel.append((d1, d2))
             if rational_point(d1, d2, d3, e1, e2, e3): img.append((d1, d2))
+    img = sorted(saturate_pairs(img))
+    selset = set(sel)
+    assert set(img) <= selset, "image must lie inside Selmer -- bug"
     return S, cands, sel, img, unk

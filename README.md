@@ -123,3 +123,52 @@ generators from that vanishing. The points in this repository were found by
 searching for them.
 
 That gap is the Millennium Problem.
+
+---
+
+## Session 2 additions
+
+### `complete2.py` — complete 2-descent (working)
+
+For curves with full rational 2-torsion the étale algebra splits as Q×Q×Q,
+the S-unit group collapses to squarefree integers supported on S, and the
+candidate set is finite and exact. **No search box, no reduction theory.**
+Sweep of `y² = x³ − n²x`, n = 1…60: **57/60 exact ranks**, every Selmer count
+a power of 2, zero bug indicators.
+
+Three bugs were found and fixed by the self-audits:
+- p-adic branches where one square condition had already failed were being
+  refined instead of pruned, manufacturing false "inconclusive" results.
+- Inconclusive classes were being dropped from Sel₂ rather than counted into
+  it. That shrinks the rank *upper* bound — the unsafe direction — and
+  produced `rank ≤ −1` on n = 59.
+- The point search required gcd(u₁,w) = 1. A projective point scales so that
+  (u₁,u₂,u₃,w) are coprime *as a quadruple*; u₁ and w may share a factor.
+  This cost half the image on n = 37.
+
+### `quadfield.py`, `ks2.py` — K(S,2) for imaginary quadratic K (working)
+
+Exact computation of K(S,2), validated against dim = |S_K| + 1 + dim Cl_S[2]
+on 8 fields covering ramified, split, inert, and class number 2. Every result
+a group of 2-power order.
+
+A real bug was caught here: the first `is_square_in_K` accepted −2 as a square
+in Q(i), because it only checked that a consistent (trace, norm) pair existed
+for the square root and never that the root lay in the field.
+
+### `unfinished/onetors.py` — 2-descent over Q×K (INCOMPLETE)
+
+For curves with exactly one rational 2-torsion point. **Do not use for
+upper bounds.** Validated parts: the descent map P ↦ x−θ lands in K(S,2) on
+every rational point tested across 5 curves and 3 fields; conic solvability by
+Hilbert symbols (exact, Hasse–Minkowski); the parametrisation (200/200 points
+on the conic); cross-checks against two other engines agree on 5 curves and
+produce zero contradictions over 39.
+
+The defect: the quartic obtained by parametrising the conic is non-minimal,
+with v_p(disc) in the dozens, and its invariants do not match the required
+(I,J) = (c₄, 2c₆). They differ by λ = μ·det², and dividing λ out is a quadratic
+twist unless λ is a square — so there is a normalisation error in the
+homogeneous space that is not yet located. Consequence: Selmer counts come out
+non-power-of-2 on roughly 40% of curves. The results are conservative (never
+contradicted another engine) but not sharp.
